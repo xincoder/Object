@@ -23,6 +23,12 @@ class Display_Layers(object):
 		net.load('AlexNet.npy', self.sess)
 		print 'Model has been successfully loaded.'
 
+		self.bool_diplay = False
+		self.col_splitter_width = 10
+		self.row_splitter_width = 10
+		self.new_map_size = 40
+		self.num_cols = 24.
+
 
 	def Get_layers(self, pra_image_paths=[]):
 		if len(pra_image_paths)>0:
@@ -44,6 +50,7 @@ class Display_Layers(object):
 				if not ret:
 					break
 				frame = cv2.resize(frame, (self.frame_resize, self.frame_resize))
+				frame = cv2.flip(frame, 1)
 				cv2.imshow('frame', frame)
 				cv2.waitKey(1)
 				feed = {self.images:[frame.copy()]}
@@ -57,11 +64,34 @@ class Display_Layers(object):
 		Display all layers 
 			Input: feature maps belong to all layers
 		'''
-		for index, feature_map in enumerate(pra_feature_map[:4]):
-			now_layout = self.Layout_map(feature_map[0])
-			# print 'Layer: {}'.format(self.layer_name_list[index])
-			cv2.imshow(self.layer_name_list[index], now_layout)
-			cv2.waitKey(1)
+		all_map_list = []
+		for index, feature_map in enumerate(pra_feature_map):
+			feature_map = feature_map[0]
+			now_map_list = np.array([cv2.resize(feature_map[:,:,x], (self.new_map_size, self.new_map_size)) for x in range(feature_map.shape[-1])])
+			all_map_list.extend(now_map_list)
+			
+			# Draw and display feature map
+			if self.bool_diplay:
+				now_layout = self.Layout_map(now_map_list)
+				# print 'Layer: {}'.format(self.layer_name_list[index])
+				cv2.imshow(self.layer_name_list[index], now_layout)
+				cv2.waitKey(1)
+
+
+		all_map_list = np.array(all_map_list)
+		# print all_map_list.shape
+		# return all_map_list
+
+		weight_list = np.random.random(len(all_map_list))
+		# print weight_list
+		weighted_map = np.array([x*y for x,y in zip(all_map_list.astype(float), weight_list)])
+		combined_map = np.sum(weighted_map, axis=0)
+		combined_map *= 255.0/combined_map.max()
+		combined_map = combined_map.astype(np.uint8)
+		# print combined_map.min(), combined_map.max(), combined_map.shape
+		cv2.imshow('combined', cv2.resize(combined_map, (self.frame_resize, self.frame_resize)))
+		cv2.waitKey(1)
+
 
 	def Layout_map(self, pra_map_list):
 		'''
@@ -69,27 +99,22 @@ class Display_Layers(object):
 			Input: pra_map_list is the list of feature maps 
 			Output: return an image with all maps
 		'''
-		num_map = pra_map_list.shape[-1]
-		num_cols = 24.
-		num_rows = int(np.ceil(num_map/num_cols))
-		col_splitter_width = 10
-		row_splitter_width = 10
-		new_map_size = 40
+		num_map = pra_map_list.shape[0]
+		num_rows = int(np.ceil(num_map/self.num_cols))
 		now_map_list = pra_map_list.astype(np.uint8)
-		now_map_list = np.array([cv2.resize(now_map_list[:,:,x], (new_map_size, new_map_size)) for x in range(now_map_list.shape[-1])])
 		
 		# generate empty drawable panel 
-		layout_rows = int(num_rows*new_map_size + (num_rows-1)*row_splitter_width)
-		layout_cols = int(num_cols*new_map_size + (num_cols-1)*col_splitter_width)
+		layout_rows = int(num_rows*self.new_map_size + (num_rows-1)*self.row_splitter_width)
+		layout_cols = int(self.num_cols*self.new_map_size + (self.num_cols-1)*self.col_splitter_width)
 		now_layout = np.zeros((layout_rows, layout_cols), dtype=np.uint8) + 100
 
 		# draw maps on the drawable panel
 		for index, now_map in enumerate(now_map_list):
-			row_ind = index//num_cols
-			col_ind = index - row_ind*num_cols
-			start_row = int(row_ind * (new_map_size+row_splitter_width))
-			start_col = int(col_ind * (new_map_size+col_splitter_width))
-			now_layout[start_row:start_row+new_map_size, start_col:start_col+new_map_size] = now_map
+			row_ind = index//self.num_cols
+			col_ind = index - row_ind*self.num_cols
+			start_row = int(row_ind * (self.new_map_size+self.row_splitter_width))
+			start_col = int(col_ind * (self.new_map_size+self.col_splitter_width))
+			now_layout[start_row:start_row+self.new_map_size, start_col:start_col+self.new_map_size] = now_map
 
 		return now_layout
 
@@ -98,6 +123,7 @@ if __name__ == '__main__':
 	image_root = 'image'
 	image_path_list = glob.glob(os.path.join(image_root, '*/*.jpg'))
 	print 'In total: {} images'.format(len(image_path_list))
+	
 	my_display_layers = Display_Layers()
 	# my_display_layers.Get_layers(image_path_list)
 	my_display_layers.Get_layers()
