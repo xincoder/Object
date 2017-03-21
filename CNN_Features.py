@@ -23,7 +23,7 @@ class Display_Layers(object):
 		net.load('AlexNet.npy', self.sess)
 		print 'Model has been successfully loaded.'
 
-		self.bool_diplay = False
+		self.bool_display = False
 		self.col_splitter_width = 10
 		self.row_splitter_width = 10
 		self.new_map_size = 40
@@ -35,7 +35,10 @@ class Display_Layers(object):
 			# extract feature maps for each image
 			for image_path in pra_image_paths:
 				print image_path
-				image = [cv2.resize(cv2.imread(image_path), (self.frame_resize, self.frame_resize))]
+				# image = [cv2.resize(cv2.imread(image_path), (self.frame_resize, self.frame_resize))]
+				image = cv2.imread(image_path)
+				self.ori_image_size = image.shape[1::-1]
+				image = [cv2.resize(image, (self.frame_resize, self.frame_resize))]
 				cv2.imshow('ori', image[0])
 				feed = {self.images:image}
 				feature_list = self.sess.run(self.feature_name_list, feed_dict=feed)
@@ -49,10 +52,17 @@ class Display_Layers(object):
 				ret, frame = video_capture.read()
 				if not ret:
 					break
+				# frame = cv2.resize(frame, (frame.shape[1]/2, frame.shape[0]/2))
+				# frame = cv2.flip(frame, 1) # a frame from camera is reversed left to right
+				# cv2.imshow('frame', frame)
+				# cv2.waitKey(1)
+
+				self.ori_image_size = frame.shape[1::-1]
 				frame = cv2.resize(frame, (self.frame_resize, self.frame_resize))
-				frame = cv2.flip(frame, 1)
+				frame = cv2.flip(frame, 1) # a frame from camera is reversed left to right
 				cv2.imshow('frame', frame)
 				cv2.waitKey(1)
+
 				feed = {self.images:[frame.copy()]}
 				feature_list = self.sess.run(self.feature_name_list, feed_dict=feed)
 				# display all layers
@@ -71,7 +81,7 @@ class Display_Layers(object):
 			all_map_list.extend(now_map_list)
 			
 			# Draw and display feature map
-			if self.bool_diplay:
+			if self.bool_display:
 				now_layout = self.Layout_map(now_map_list)
 				# print 'Layer: {}'.format(self.layer_name_list[index])
 				cv2.imshow(self.layer_name_list[index], now_layout)
@@ -90,6 +100,7 @@ class Display_Layers(object):
 		combined_map = combined_map.astype(np.uint8)
 		# print combined_map.min(), combined_map.max(), combined_map.shape
 		cv2.imshow('combined', cv2.resize(combined_map, (self.frame_resize, self.frame_resize)))
+		# cv2.imshow('combined', cv2.resize(combined_map, self.ori_image_size))
 		cv2.waitKey(1)
 
 
