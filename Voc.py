@@ -45,7 +45,7 @@ class VOC(object):
 
 			# cv2.imshow('img', image)
 			# cv2.imshow('seg', image_segment)
-			
+			 
 			now_color = self.color_list[self.now_instance_name]
 			image_mask = cv2.inRange(image_segment, now_color, now_color+1)
 
@@ -65,8 +65,9 @@ if __name__ == '__main__':
 	num_name_list = len(voc.instance_name_list)
 	for ind in range(num_name_list):
 		for image, image_segment, image_mask in voc.get_next_image(ind):
-			cv2.imshow('img', image)
-			cv2.imshow('seg', image_segment)
-			cv2.imshow('mask', cv2.resize(image_mask, (50, 50)))
+			# cv2.imshow('img', image)
+			# cv2.imshow('seg', image_segment)
+			cv2.imshow('img', np.concatenate((image, image_segment), axis=1))
+			cv2.imshow('mask', cv2.resize(image_mask, (250, 250)))
 			cv2.waitKey(1)
-			
+		

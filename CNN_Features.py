@@ -6,6 +6,7 @@ from AlexNet import AlexNet
 from tensorflow.python.platform import gfile
 import glob
 import os
+from Voc import VOC
 
 class Display_Layers(object):
 	def __init__(self):
@@ -29,23 +30,16 @@ class Display_Layers(object):
 		self.new_map_size = 40
 		self.num_cols = 24.
 
+		self.my_voc = VOC()
 
-	def Get_layers(self, pra_image_paths=[]):
-		if len(pra_image_paths)>0:
-			# extract feature maps for each image
-			for image_path in pra_image_paths:
-				print image_path
-				# image = [cv2.resize(cv2.imread(image_path), (self.frame_resize, self.frame_resize))]
-				image = cv2.imread(image_path)
-				self.ori_image_size = image.shape[1::-1]
-				image = [cv2.resize(image, (self.frame_resize, self.frame_resize))]
-				cv2.imshow('ori', image[0])
-				feed = {self.images:image}
-				feature_list = self.sess.run(self.feature_name_list, feed_dict=feed)
 
-				# display all layers
-				self.Display_layers(feature_list)
-		else:
+	def Get_layers(self, use_video=False):
+		# extract feature maps for each image
+		# for image_path in pra_image_paths:
+		# 	print image_path
+		# 	# image = [cv2.resize(cv2.imread(image_path), (self.frame_resize, self.frame_resize))]
+		# 	image = cv2.imread(image_path)
+		if use_video:
 			print 'video capture'
 			video_capture = cv2.VideoCapture(0)
 			while(True):
@@ -60,16 +54,34 @@ class Display_Layers(object):
 				self.ori_image_size = frame.shape[1::-1]
 				frame = cv2.resize(frame, (self.frame_resize, self.frame_resize))
 				frame = cv2.flip(frame, 1) # a frame from camera is reversed left to right
+				image = frame.copy()
 				cv2.imshow('frame', frame)
 				cv2.waitKey(1)
 
 				feed = {self.images:[frame.copy()]}
 				feature_list = self.sess.run(self.feature_name_list, feed_dict=feed)
 				# display all layers
-				self.Display_layers(feature_list)
+				combined_image = self.Combine_layers(feature_list)
+				cv2.imshow('combined', combined_image)
+				cv2.waitKey(1)
+
+		else:
+			for image, image_segment, image_mask in self.my_voc.get_next_image(14):
+				self.ori_image_size = image.shape[1::-1]
+				image = [cv2.resize(image, (self.frame_resize, self.frame_resize))]
+				cv2.imshow('ori', image[0])
+				cv2.imshow('GT_mask', cv2.resize(image_mask, (self.frame_resize, self.frame_resize)))
+				feed = {self.images:image}
+				feature_list = self.sess.run(self.feature_name_list, feed_dict=feed)
+				# display all layers
+				combined_image = self.Combine_layers(feature_list)
+				cv2.imshow('combined', combined_image)
+				cv2.waitKey(1)
 
 
-	def Display_layers(self, pra_feature_map):
+
+
+	def Combine_layers(self, pra_feature_map):
 		'''
 		Display all layers 
 			Input: feature maps belong to all layers
@@ -97,11 +109,12 @@ class Display_Layers(object):
 		weighted_map = np.array([x*y for x,y in zip(all_map_list.astype(float), weight_list)])
 		combined_map = np.sum(weighted_map, axis=0)
 		combined_map *= 255.0/combined_map.max()
-		combined_map = combined_map.astype(np.uint8)
-		# print combined_map.min(), combined_map.max(), combined_map.shape
-		cv2.imshow('combined', cv2.resize(combined_map, (self.frame_resize, self.frame_resize)))
-		# cv2.imshow('combined', cv2.resize(combined_map, self.ori_image_size))
-		cv2.waitKey(1)
+		combined_map = cv2.resize(combined_map.astype(np.uint8), (self.frame_resize, self.frame_resize))
+		# # print combined_map.min(), combined_map.max(), combined_map.shape
+		# cv2.imshow('combined', cv2.resize(combined_map, (self.frame_resize, self.frame_resize)))
+		# # cv2.imshow('combined', cv2.resize(combined_map, self.ori_image_size))
+		# cv2.waitKey(0)
+		return combined_map
 
 
 	def Layout_map(self, pra_map_list):
@@ -136,7 +149,7 @@ if __name__ == '__main__':
 	print 'In total: {} images'.format(len(image_path_list))
 	
 	my_display_layers = Display_Layers()
-	# my_display_layers.Get_layers(image_path_list)
+	# my_display_layers.Get_layers(use_video=True)
 	my_display_layers.Get_layers()
 
 	
