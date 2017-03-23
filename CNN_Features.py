@@ -66,7 +66,7 @@ class Display_Layers(object):
 				cv2.waitKey(1)
 
 		else:
-			for image, image_segment, image_mask in self.my_voc.get_next_image(14):
+			for image, image_segment, image_mask in self.my_voc.get_next_image('Person'):
 				self.ori_image_size = image.shape[1::-1]
 				image = [cv2.resize(image, (self.frame_resize, self.frame_resize))]
 				cv2.imshow('ori', image[0])

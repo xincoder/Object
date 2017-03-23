@@ -34,9 +34,8 @@ class VOC(object):
 			'Tvmonitor': np.array([128, 64, 0], dtype=np.uint8)} # 19
 
 
-	def get_next_image(self, pra_instance_index):
-		self.now_instance_index = pra_instance_index
-		self.now_instance_name = self.instance_name_list[self.now_instance_index]
+	def get_next_image(self, pra_instance_name):
+		self.now_instance_name = pra_instance_name
 		print self.now_instance_name
 
 		for image_path, segmentation_class_path in zip(self.image_path_list, self.segmentation_class_path_list):
@@ -62,11 +61,8 @@ class VOC(object):
 
 if __name__ == '__main__':
 	voc = VOC()
-	num_name_list = len(voc.instance_name_list)
-	for ind in range(num_name_list):
-		for image, image_segment, image_mask in voc.get_next_image(ind):
-			# cv2.imshow('img', image)
-			# cv2.imshow('seg', image_segment)
+	for name in voc.instance_name_list:
+		for image, image_segment, image_mask in voc.get_next_image(name):
 			cv2.imshow('img', np.concatenate((image, image_segment), axis=1))
 			cv2.imshow('mask', cv2.resize(image_mask, (250, 250)))
 			cv2.waitKey(1)
