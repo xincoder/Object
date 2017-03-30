@@ -103,23 +103,23 @@ class Mask_Controller(object):
 					# rs, gt = sess.run([merged, self.mask_model.ground_truth_mask], feed_dict=feed)
 					rs, cost, combined_map, _, global_step = sess.run([merged, self.mask_model.cost, self.mask_model.combined_map, self.mask_model.train_op, self.mask_model.global_step], feed_dict=feed)
 					print 'Epoch:{}, Global_step: {}, Cost: {}'.format(epoch_index, global_step, cost)
-					# print combined_map.shape
-					# print 
-					
+					writer.add_summary(rs, global_step=global_step)
 				
 					if epoch_index > 500:
-						cv2.imshow('now', cv2.resize(combined_map.astype(np.uint8), (100, 100)))
+						cv2.imshow('image', cv2.resize(image, (100, 100)))
+						cv2.imshow('generated', cv2.resize(combined_map.astype(np.uint8), (100, 100)))
 						cv2.imshow('gt', cv2.resize(input_ground_truth_mask, (100, 100)))
 						cv2.waitKey(0)
 					else:
-						cv2.imshow('now', combined_map.astype(np.uint8))
+						cv2.imshow('image', cv2.resize(image, (self.config.new_map_size, self.config.new_map_size)))
+						cv2.imshow('generated', combined_map.astype(np.uint8))
 						cv2.imshow('gt', input_ground_truth_mask)
 						cv2.waitKey(1)
-					
-					writer.add_summary(rs, global_step=global_step)
-					
 
+				if epoch_index%2 ==0:
+					model_saver.save(sess, self.config.mask_model_save_path, global_step=epoch_index)
 
+					
 def main(_):
 	# mask_model = Mask_Model(FLAGS)
 	# mask_model.Train()

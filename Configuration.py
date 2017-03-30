@@ -33,7 +33,7 @@ tf.app.flags.DEFINE_string('cache_root_path', '../data_cache',
 
 tf.app.flags.DEFINE_string('mask_model_folder', os.path.join(FLAGS.cache_root_path, 'mask_model'),
 								'Mask Model will be saved in this path')
-tf.app.flags.DEFINE_string('mask_model_save_path', os.path.join(FLAGS.cache_root_path, 'mask_model_folder/my_caption_model'),
+tf.app.flags.DEFINE_string('mask_model_save_path', os.path.join(FLAGS.cache_root_path, 'mask_model/my_caption_model'),
 								'Mask Model name')
 tf.app.flags.DEFINE_string('mask_summary_folder', os.path.join(FLAGS.cache_root_path, 'mask_log'),
 								'Mask Model log will be saved in this path')
